@@ -1,5 +1,5 @@
 {
-	"name": "DS_READ_CSV",
+	"name": "DS_SOURCE_CSV",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "LS_ADLS_CSV",

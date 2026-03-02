@@ -207,7 +207,7 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "DS_READ_CSV",
+						"referenceName": "DS_SOURCE_CSV",
 						"type": "DatasetReference"
 					}
 				],
@@ -239,7 +239,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "DS_READ_CSV",
+						"referenceName": "DS_SOURCE_CSV",
 						"type": "DatasetReference"
 					},
 					"enableLogging": false,
