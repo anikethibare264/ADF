@@ -1,0 +1,9 @@
+{
+	"name": "AniketDataFactory00",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "06beeeaa-c496-4764-8424-f663a1e7ee05",
+		"tenantId": "5c5d9ac8-02d2-4ea9-9094-a36bf4d70008"
+	}
+}
