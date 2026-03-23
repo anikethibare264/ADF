@@ -15,6 +15,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'password' of 'LS_AZURE_SQL_DATABASE'"
 		},
+		"LS_ConnectToSQL_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_ConnectToSQL'"
+		},
 		"LS_ADLS_CSV_properties_typeProperties_url": {
 			"type": "string",
 			"defaultValue": "https://aniketstorage01.dfs.core.windows.net/"
@@ -30,6 +34,18 @@
 		"LS_AZURE_SQL_DATABASE_properties_typeProperties_userName": {
 			"type": "string",
 			"defaultValue": "server-db"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "ANIKET\\SQLEXPRESS"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "AdventureWorks2025"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "Aniket"
 		}
 	},
 	"variables": {
@@ -72,6 +88,16 @@
 						"value": "[parameters('LS_AZURE_SQL_DATABASE_password')]"
 					}
 				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/IR-SelfHosted-OnPrem')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
 			},
 			"dependsOn": []
 		},
@@ -201,7 +227,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_TARGET_CSV')]",
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_PARQUET')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -209,22 +235,27 @@
 					"referenceName": "LS_ADLS_CSV",
 					"type": "LinkedServiceReference"
 				},
+				"parameters": {
+					"TargetFileName": {
+						"type": "string"
+					}
+				},
 				"folder": {
-					"name": "ADLS_DATASETS"
+					"name": "SQL_DATASETS"
 				},
 				"annotations": [],
-				"type": "DelimitedText",
+				"type": "Parquet",
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
-						"fileName": "Students Social Media Addiction.csv",
-						"folderPath": "ProcessedFiles",
+						"fileName": {
+							"value": "@dataset().TargetFileName",
+							"type": "Expression"
+						},
+						"folderPath": "SqlDatasets",
 						"fileSystem": "data"
 					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"firstRowAsHeader": true,
-					"quoteChar": "\""
+					"compressionCodec": "snappy"
 				},
 				"schema": []
 			},
@@ -271,7 +302,150 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DS_SQL_PARQUET')]",
+			"name": "[concat(parameters('factoryName'), '/DS_TARGET_CSV')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ADLS_CSV",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "ADLS_DATASETS"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "Students Social Media Addiction.csv",
+						"folderPath": "ProcessedFiles",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_CSV')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_ConnectToSQL')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SqlServer",
+				"typeProperties": {
+					"server": "[parameters('LS_ConnectToSQL_properties_typeProperties_server')]",
+					"database": "[parameters('LS_ConnectToSQL_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": true,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_ConnectToSQL_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_ConnectToSQL_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "IR-SelfHosted-OnPrem",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/IR-SelfHosted-OnPrem')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SingleMigration_Sink')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ADLS_CSV",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL_DATASETS"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileSystem": "data"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Student_ID",
+						"type": "String"
+					},
+					{
+						"name": "Age",
+						"type": "String"
+					},
+					{
+						"name": "Gender",
+						"type": "String"
+					},
+					{
+						"name": "Academic_Level",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "Avg_Daily_Usage_Hours",
+						"type": "String"
+					},
+					{
+						"name": "Most_Used_Platform",
+						"type": "String"
+					},
+					{
+						"name": "Affects_Academic_Performance",
+						"type": "String"
+					},
+					{
+						"name": "Sleep_Hours_Per_Night",
+						"type": "String"
+					},
+					{
+						"name": "Mental_Health_Score",
+						"type": "String"
+					},
+					{
+						"name": "Relationship_Status",
+						"type": "String"
+					},
+					{
+						"name": "Conflicts_Over_Social_Media",
+						"type": "String"
+					},
+					{
+						"name": "Addicted_Score",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_CSV')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_BatchMigration_Sink')]",
 			"type": "Microsoft.DataFactory/factories/datasets",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -280,7 +454,10 @@
 					"type": "LinkedServiceReference"
 				},
 				"parameters": {
-					"TargetFileName": {
+					"SchemaName": {
+						"type": "string"
+					},
+					"TableName": {
 						"type": "string"
 					}
 				},
@@ -288,20 +465,79 @@
 					"name": "SQL_DATASETS"
 				},
 				"annotations": [],
-				"type": "Parquet",
+				"type": "DelimitedText",
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
 						"fileName": {
-							"value": "@dataset().TargetFileName",
+							"value": "@{concat(dataset().TableName,'.CSV')}",
 							"type": "Expression"
 						},
-						"folderPath": "SqlDatasets",
+						"folderPath": {
+							"value": "@{concat(dataset().SchemaName,'/',dataset().TableName)}",
+							"type": "Expression"
+						},
 						"fileSystem": "data"
 					},
-					"compressionCodec": "snappy"
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
 				},
-				"schema": []
+				"schema": [
+					{
+						"name": "Student_ID",
+						"type": "String"
+					},
+					{
+						"name": "Age",
+						"type": "String"
+					},
+					{
+						"name": "Gender",
+						"type": "String"
+					},
+					{
+						"name": "Academic_Level",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "Avg_Daily_Usage_Hours",
+						"type": "String"
+					},
+					{
+						"name": "Most_Used_Platform",
+						"type": "String"
+					},
+					{
+						"name": "Affects_Academic_Performance",
+						"type": "String"
+					},
+					{
+						"name": "Sleep_Hours_Per_Night",
+						"type": "String"
+					},
+					{
+						"name": "Mental_Health_Score",
+						"type": "String"
+					},
+					{
+						"name": "Relationship_Status",
+						"type": "String"
+					},
+					{
+						"name": "Conflicts_Over_Social_Media",
+						"type": "String"
+					},
+					{
+						"name": "Addicted_Score",
+						"type": "String"
+					}
+				]
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/LS_ADLS_CSV')]"
@@ -897,6 +1133,191 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_TABLES')]",
 				"[concat(variables('factoryId'), '/datasets/DS_SQL_PARQUET')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SingleMigration_Source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ConnectToSQL",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL_DATASETS"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [
+					{
+						"name": "BusinessEntityID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "TerritoryID",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "SalesQuota",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "Bonus",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "CommissionPct",
+						"type": "smallmoney",
+						"precision": 10,
+						"scale": 4
+					},
+					{
+						"name": "SalesYTD",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "SalesLastYear",
+						"type": "money",
+						"precision": 19,
+						"scale": 4
+					},
+					{
+						"name": "rowguid",
+						"type": "uniqueidentifier"
+					},
+					{
+						"name": "ModifiedDate",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "Sales",
+					"table": "SalesPerson"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ConnectToSQL')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_BATCHMIGRATION')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ConnectToSQL",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ConnectToSQL')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_BatchMigration_Sorce')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_ConnectToSQL",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "SQL_DATASETS"
+				},
+				"annotations": [],
+				"type": "SqlServerTable",
+				"schema": [],
+				"typeProperties": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_ConnectToSQL')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_SINGLE_MIGRATION')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy_sql_table",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlServerSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_SingleMigration_Source",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SingleMigration_Sink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_SingleMigration_Source')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SingleMigration_Sink')]"
 			]
 		}
 	]

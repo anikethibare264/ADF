@@ -11,6 +11,9 @@
 		"LS_AZURE_SQL_DATABASE_password": {
 			"value": ""
 		},
+		"LS_ConnectToSQL_password": {
+			"value": ""
+		},
 		"LS_ADLS_CSV_properties_typeProperties_url": {
 			"value": "https://aniketstorage01.dfs.core.windows.net/"
 		},
@@ -22,6 +25,15 @@
 		},
 		"LS_AZURE_SQL_DATABASE_properties_typeProperties_userName": {
 			"value": "server-db"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_server": {
+			"value": "ANIKET\\SQLEXPRESS"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_database": {
+			"value": "AdventureWorks2025"
+		},
+		"LS_ConnectToSQL_properties_typeProperties_userName": {
+			"value": "Aniket"
 		}
 	}
 }
