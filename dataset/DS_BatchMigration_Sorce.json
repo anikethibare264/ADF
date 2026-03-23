@@ -1,0 +1,15 @@
+{
+	"name": "DS_BatchMigration_Sorce",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ConnectToSQL",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "SQL_DATASETS"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}

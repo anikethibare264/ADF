@@ -1,0 +1,12 @@
+{
+	"name": "DS_BATCHMIGRATION",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ConnectToSQL",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}
