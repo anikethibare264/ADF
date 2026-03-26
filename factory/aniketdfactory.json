@@ -1,0 +1,9 @@
+{
+	"name": "aniketdfactory",
+	"location": "eastus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "35f3c585-f799-47b2-a63e-88426141cbfd",
+		"tenantId": "54b2ba5c-778d-4d4d-828b-466f454772cd"
+	}
+}
